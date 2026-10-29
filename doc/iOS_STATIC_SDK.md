@@ -57,14 +57,14 @@ WechatSDK/
 
 ## 应用接入
 
-宿主 `pubspec.yaml` 固定经过审核的完整 Git 提交。下面是首次已完成 Git 接入及归档验证的修复版本；后续升级时改为新的验收提交：
+宿主 `pubspec.yaml` 固定经过审核的完整 Git 提交。下面的版本已包含打包和 Scene 回跳修复，并完成与阿里云插件的联合接入验证；后续升级时改为新的验收提交：
 
 ```yaml
 dependencies:
   fluwx:
     git:
       url: https://github.com/shell-echo/fluwx.git
-      ref: 03eea944856e297781206ebf0f2c5866917ee341
+      ref: 71a5e0dbc1241119114b42c9d92b7a9812dddc52
       path: packages/fluwx
 
 flutter:
@@ -137,3 +137,5 @@ python3 -m unittest discover -s tools/tests -p 'test_wechat_sdk.py' -v
 联合阿里云号码认证插件构建时，发现上游 `scene:continueUserActivity:` 使用 UIKit 的 `void` 签名，但插件实现的 `FlutterSceneLifeCycleDelegate` 要求 `BOOL`。Flutter 据此决定停止向其他插件和宿主转发事件；已注册时返回值必须与 `WXApi handleOpenUniversalLink:delegate:` 一致。
 
 Scene 冷启动的 Universal Link 位于 `connectionOptions.userActivities`，上游仅处理 `URLContexts`，会遗漏该入口。现在分别转发两种输入；Dart 尚未完成微信注册时缓存 Universal Link，注册失败保留、注册成功后清空并重放一次。注册前无法判断是否为微信链接，因此返回 `NO` 让其他插件和宿主继续路由，宿主路由应能接受该回调路径。新增宿主回归测试覆盖返回类型、SDK `NO` / `YES`、参数转发、空/其他活动、两种链接同时存在、注册失败/重试与不重复重放。测试替换 SDK 方法，不证明真实微信支付或回跳已成功。SDK 二进制、头文件和支付接口未变，正式签名上传及真实微信回跳仍需业务接入后验收。
+
+验收代码为 [`71a5e0dbc1241119114b42c9d92b7a9812dddc52`](https://github.com/shell-echo/fluwx/commit/71a5e0dbc1241119114b42c9d92b7a9812dddc52)，阿里云插件固定为 `82a307304552cd76fc70f1226d45f7dad3eb296b`。联合宿主 15 项 iOS 测试（本库 6 项、阿里云 9 项）和 Android debug APK 通过；两个 Git 提交的交付文件与已测源码一致（仅维护文档后补），最终未签名 Release 设备归档通过并完成独立复核。归档中没有微信占位 framework，微信符号保存在 UUID 匹配的宿主 dSYM；阿里云动态库与原厂 dSYM 的 UUID 匹配，10 个默认图标及两家隐私清单完整。未变的导入器沿用首次有效测试结果，未重复执行。本次没有进行正式签名导出、App Store 上传或真实运营商/微信交易。

@@ -1,6 +1,8 @@
 # Unreleased
 * iOS SwiftPM: distribute the unmodified WeChat 2.0.8 archive as a static-library XCFramework, avoiding embedded empty framework stubs and their missing dSYM warnings.
 * Preserve the original vendor privacy manifest in a separate SwiftPM resource bundle; add reproducible SDK import checks and packaging regression tests.
+* Return the SDK's handled result from the iOS Scene Universal Link callback, as required by FlutterSceneLifeCycleDelegate.
+* Forward cold-start Scene Universal Links and replay links received before successful WeChat registration.
 
 # 6.0.6
 * iOS framework=>2.0.8

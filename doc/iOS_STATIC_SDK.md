@@ -1,6 +1,6 @@
 # iOS 静态 SDK 分发与 dSYM
 
-此分支基于 fluwx 6.0.6，使用腾讯官方带支付功能的 WeChat OpenSDK 2.0.8。改动限于 `packages/fluwx` 的 SwiftPM 分发方式；Dart API、原生业务代码和 Android 配置沿用上游。`fluwx_no_pay` 和 CocoaPods 分发未在本补丁中修改。
+此分支基于 fluwx 6.0.6，使用腾讯官方带支付功能的 WeChat OpenSDK 2.0.8。修复包括 `packages/fluwx` 的 SwiftPM 分发方式，以及共享 iOS 源码中 Scene Universal Link 的返回值、冷启动转发和注册前缓存。Dart API 和 Android 配置沿用上游；`fluwx_no_pay` 和 CocoaPods 的分发方式未修改。
 
 ## 本地修复登记
 
@@ -44,15 +44,16 @@ WechatSDK/
 | 路径（相对仓库根目录） | 本地改动 | 跟随上游时检查 |
 |---|---|---|
 | `packages/fluwx/ios/fluwx/Package.swift` | 将远程 `WechatOpenSDK-SPM` 产品依赖替换为本地静态库 binary target，并依赖 `WechatOpenSDKPrivacy` 资源 target | 保持 Flutter 生成的包仍能消费；按新上游整合 target、编译和链接设置，避免恢复旧 framework 分发 |
+| `packages/_shared/ios/Sources/FluwxPlugin.m` | Scene Universal Link 返回 `BOOL`；处理冷启动 `userActivities`，注册前缓存并在成功注册后重放一次 | 区分 Flutter 插件与 UIKit 的返回类型，覆盖冷启动、注册失败/重试及非微信链接继续路由；上游修复后检查是否能移除本地处理 |
 | `packages/fluwx/ios/fluwx/Frameworks/WechatSDK/WechatOpenSDK.xcframework/` | 原厂 archive 改为 `libWechatOpenSDK.a`，添加 `HeadersPath` 和普通 Clang module map；头文件保留 `WechatOpenSDK/` 命名空间 | 公开导入路径、全部平台/架构与原厂字节保持正确；该目录通过导入器生成 |
 | `packages/fluwx/ios/fluwx/Frameworks/WechatSDK/Privacy/` | 用独立 SwiftPM 资源 target 分发原厂隐私清单 | 保留原件、target 依赖和最终 App 中的资源 bundle；隐私内容变更时依据新原件调整测试预期 |
 | `packages/fluwx/ios/fluwx/Frameworks/WechatSDK/provenance.json`、`README.vendor.txt` | 记录版本、输入文件哈希和原厂发布说明 | 与本次导入一起更新；不要只替换 `.a` 而保留旧记录 |
 | `tools/import_wechat_sdk.py` | 检查静态 archive、架构、头文件集合和资源，暂存后整体替换，失败回滚 | SDK 新结构需要先审查再修改检查条件，不能跳过检查直接更新 |
-| `tools/tests/test_wechat_sdk.py`、`tools/tests/ios/WechatPackagingTests.swift` | 导入/回滚测试和宿主运行时打包测试 | SDK 更新后执行；宿主测试夹具要复制到实际启用 SPM 的测试工程 |
+| `tools/tests/test_wechat_sdk.py`、`tools/tests/ios/WechatPackagingTests.swift` | 导入/回滚测试、宿主打包和 Scene 回跳路由测试 | SDK 或相关回调更新后执行；宿主测试夹具要复制到实际启用 SPM 的测试工程 |
 | `.gitattributes` | 仅对导入的腾讯头文件关闭 Git 空白检查，保留原厂空白字节 | 范围保持在 vendor 头文件，其他源码继续检查 |
 | `README.md`、`README_CN.md`、`CHANGELOG.md`、本文件 | 说明入口、修复记录、接入和维护步骤 | 升级时记录新版本、新上游基线、验收代码提交和剩余未验证项 |
 
-本补丁没有修改 `packages/_shared` 中的业务源码、Dart API、Android 配置、`fluwx_no_pay` 或 CocoaPods 分发，也没有修改上游已有的 `FLUWX_WITH_PAY`、`-ObjC`、`-all_load` 设置。未来上游调整这些设置时，应审查新版本的要求，避免机械地恢复旧值。保留 monorepo 原有软链接和 `packages/_shared`，这是 Git 子目录接入所依赖的仓库结构。
+首次打包修复没有修改原生业务源码；后续复查只调整共享 iOS 源码中上述 Scene Universal Link 路由和缓存。该共享源码也会被 no_pay 和 CocoaPods 使用，但它们的 SDK 分发和构建未在本次验证。Dart API、Android 配置、支付请求与响应接口、`FLUWX_WITH_PAY`、`-ObjC`、`-all_load` 设置均保持原样。未来上游调整这些设置时，应审查新版本的要求，避免机械地恢复旧值。保留 monorepo 原有软链接和 `packages/_shared`，这是 Git 子目录接入所依赖的仓库结构。
 
 ## 应用接入
 
@@ -82,6 +83,8 @@ open ios/Runner.xcworkspace
 Xcode 使用宿主自己的 Team、签名和 Bundle ID。SwiftPM 自动完成静态链接及隐私资源复制，宿主无需添加针对该 SDK 的 framework 删除脚本、dSYM 生成脚本、MinimumOSVersion 修补或额外资源复制阶段。也不要重复手动添加微信 SDK。
 
 微信能力本身仍需按[官方接入说明](https://developers.weixin.qq.com/doc/oplatform/Mobile_App/Access_Guide/iOS.html)配置 App ID、URL Scheme、`LSApplicationQueriesSchemes` 和 Universal Link / Associated Domains，再调用 `fluwx.registerApi`。这部分属于宿主的微信配置，与本次 SDK 封装修复独立。
+
+应用尽早创建并保留一个 `Fluwx` 实例，先安装所需的响应订阅者，再调用 `registerApi`，以接收成功注册时重放的冷启动事件。宿主路由也应能接受微信 Universal Link 的回调路径；注册前该路径会继续交给 Flutter 和其他插件。`registerApi` 成功只代表 SDK 注册成功，域名关联及真实回跳仍需真机验证。支付交易结果由服务端通知或主动查单确认。
 
 ## 跟随官方 fluwx 更新
 
@@ -119,6 +122,7 @@ python3 -m unittest discover -s tools/tests -p 'test_wechat_sdk.py' -v
 - 宿主 dSYM 中仍有 `WXApi` / `FluwxPlugin` 的可用符号；不能因为没有单独 framework 而遗漏微信代码。
 - `fluwx_WechatOpenSDKPrivacy.bundle/PrivacyInfo.xcprivacy` 与腾讯原件一致。
 - 运行 `tools/tests/ios/WechatPackagingTests.swift` 中的宿主 XCTest，确认微信类来自宿主镜像、SDK 方法可执行、隐私清单可读。
+- 确认 Flutter Scene Universal Link 回调返回 `BOOL`，SDK 返回未处理/已处理时分别转发 `NO`/`YES`，且用户活动与插件 delegate 原样传给 SDK。该测试替换 SDK 处理方法，不进行真实微信回跳。
 
 上述 XCTest 用于启用本分支 SwiftPM 集成的 Flutter 宿主。可将它复制为测试工程的 `ios/RunnerTests/RunnerTests.swift`，再运行 Runner 的 XCTest Scheme；它不需要微信密钥，也不进行登录或支付。
 
@@ -127,3 +131,9 @@ python3 -m unittest discover -s tools/tests -p 'test_wechat_sdk.py' -v
 ## 后续更新记录
 
 每次升级追加一条记录，填写：日期、上游 fluwx tag / SHA、腾讯 SDK 版本与官方下载包哈希、本地保留或移除的补丁、新增兼容性处理、实际验收的代码 SHA、检查命令/结果和未验证项。首次修复信息保留在上方“本地修复登记”。
+
+### 2026-10-29 联合接入复查
+
+联合阿里云号码认证插件构建时，发现上游 `scene:continueUserActivity:` 使用 UIKit 的 `void` 签名，但插件实现的 `FlutterSceneLifeCycleDelegate` 要求 `BOOL`。Flutter 据此决定停止向其他插件和宿主转发事件；已注册时返回值必须与 `WXApi handleOpenUniversalLink:delegate:` 一致。
+
+Scene 冷启动的 Universal Link 位于 `connectionOptions.userActivities`，上游仅处理 `URLContexts`，会遗漏该入口。现在分别转发两种输入；Dart 尚未完成微信注册时缓存 Universal Link，注册失败保留、注册成功后清空并重放一次。注册前无法判断是否为微信链接，因此返回 `NO` 让其他插件和宿主继续路由，宿主路由应能接受该回调路径。新增宿主回归测试覆盖返回类型、SDK `NO` / `YES`、参数转发、空/其他活动、两种链接同时存在、注册失败/重试与不重复重放。测试替换 SDK 方法，不证明真实微信支付或回跳已成功。SDK 二进制、头文件和支付接口未变，正式签名上传及真实微信回跳仍需业务接入后验收。

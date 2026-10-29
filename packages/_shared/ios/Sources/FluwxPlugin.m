@@ -49,6 +49,7 @@ typedef void(^FluwxWXReqRunnable)(void);
     FluwxWXReqRunnable _attemptToResumeMsgFromWxRunnable;
     // cache open url request when WXApi is not registered, and handle it once WXApi is registered
     FluwxWXReqRunnable _cachedOpenUrlRequest;
+    NSMutableArray<NSUserActivity *> *_pendingUniversalLinks;
 }
 
 const NSString *errStr = @"errStr";
@@ -226,6 +227,11 @@ NSObject <FlutterPluginRegistrar> *_fluwxRegistrar;
     if (_cachedOpenUrlRequest != nil) {
         _cachedOpenUrlRequest();
         _cachedOpenUrlRequest = nil;
+    }
+    NSArray<NSUserActivity *> *pendingUniversalLinks = [_pendingUniversalLinks copy];
+    [_pendingUniversalLinks removeAllObjects];
+    for (NSUserActivity *activity in pendingUniversalLinks) {
+        [WXApi handleOpenUniversalLink:activity delegate:self];
     }
 
     // Set `_isRunning` after calling `_cachedOpenUrlRequest` to ensure that
@@ -459,10 +465,14 @@ NSObject <FlutterPluginRegistrar> *_fluwxRegistrar;
 - (BOOL)scene:(UIScene *)scene
     willConnectToSession:(UISceneSession *)session
                  options:(UISceneConnectionOptions *)connectionOptions API_AVAILABLE(ios(13.0)) {
-    if (connectionOptions == nil || connectionOptions.URLContexts.count == 0) {
+    if (connectionOptions == nil) {
         return NO;
     }
-    return [self scene:scene openURLContexts:connectionOptions.URLContexts];
+    BOOL handled = [self scene:scene openURLContexts:connectionOptions.URLContexts];
+    for (NSUserActivity *activity in connectionOptions.userActivities) {
+        handled = [self scene:scene continueUserActivity:activity] || handled;
+    }
+    return handled;
 }
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray *_Nonnull))restorationHandler{
@@ -470,9 +480,20 @@ NSObject <FlutterPluginRegistrar> *_fluwxRegistrar;
     return [WXApi handleOpenUniversalLink:userActivity delegate:self];
 }
 
-- (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity API_AVAILABLE(ios(13.0)) {
-    // TODO: (if need) cache userActivity and handle it once WXApi is registered
-    [WXApi handleOpenUniversalLink:userActivity delegate:self];
+- (BOOL)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity API_AVAILABLE(ios(13.0)) {
+    if (![userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] || userActivity.webpageURL == nil) {
+        return NO;
+    }
+    if (_isRunning) {
+        return [WXApi handleOpenUniversalLink:userActivity delegate:self];
+    }
+    if (_pendingUniversalLinks == nil) {
+        _pendingUniversalLinks = [NSMutableArray array];
+    }
+    [_pendingUniversalLinks addObject:userActivity];
+    // The SDK cannot identify a WeChat link until registration. Preserve it for
+    // replay, but allow other plugins and the host to route an unclaimed link.
+    return NO;
 }
 
 - (void)handleOpenUrlCall:(FlutterMethodCall *)call

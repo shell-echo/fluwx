@@ -1,0 +1,23 @@
+{
+  "sha256": {
+    "Info.plist": "73e7b04a733a6941c7af0664e2f4ded5d6247e18151dc9a6656052d1b0d8e9ee",
+    "PrivacyInfo.xcprivacy": "dc8d7e1f9a7da7f3381f30746b59206ee62ce225b69fe3bcbb66234f8459be35",
+    "README.txt": "29e9cfbe1040f09b98a41b5fd2e8fc78c8d246baf657aa8f03b8759a38b1b66d",
+    "ios-arm64/WechatOpenSDK.framework/Headers/WXApi.h": "124f15d10fece25f2517ac55a82d8dd17457bf3c79e901a7e710d40e6968778f",
+    "ios-arm64/WechatOpenSDK.framework/Headers/WXApiObject.h": "140af3b6b76a0bacc5cb0ff0533175f1752a5c7c3f2e8af3730a535742536a4d",
+    "ios-arm64/WechatOpenSDK.framework/Headers/WechatAuthSDK.h": "797e9cb595b590b961c3f85334d58e24f8f40698301c6c237b80a374604a03e7",
+    "ios-arm64/WechatOpenSDK.framework/Headers/WechatOpenSDK.h": "4fe88232acfe06245a21a04f18959dd7e762af4947e711dba5df0ce222da5520",
+    "ios-arm64/WechatOpenSDK.framework/Info.plist": "059f91b5d555e87e83a6b615d9a87b0a4b04670e81955fd7744e3257299dd0f8",
+    "ios-arm64/WechatOpenSDK.framework/Modules/module.modulemap": "21b015268e0a8321610ba0cc57c226d68365f7e70110bb945f3f0f13d346158f",
+    "ios-arm64/WechatOpenSDK.framework/WechatOpenSDK": "0b20e64cfdd53b1c936c9f0308a5ac698ca8f56a9a8e6703d675904f1f717d08",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers/WXApi.h": "124f15d10fece25f2517ac55a82d8dd17457bf3c79e901a7e710d40e6968778f",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers/WXApiObject.h": "140af3b6b76a0bacc5cb0ff0533175f1752a5c7c3f2e8af3730a535742536a4d",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers/WechatAuthSDK.h": "797e9cb595b590b961c3f85334d58e24f8f40698301c6c237b80a374604a03e7",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers/WechatOpenSDK.h": "4fe88232acfe06245a21a04f18959dd7e762af4947e711dba5df0ce222da5520",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Info.plist": "059f91b5d555e87e83a6b615d9a87b0a4b04670e81955fd7744e3257299dd0f8",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Modules/module.modulemap": "21b015268e0a8321610ba0cc57c226d68365f7e70110bb945f3f0f13d346158f",
+    "ios-arm64_x86_64-simulator/WechatOpenSDK.framework/WechatOpenSDK": "c8300851c0a14e0907291dc2351409c1fde88cc4175a66b630c56165cecb70b7"
+  },
+  "source_url": "https://dldir1.qq.com/WechatWebDev/opensdk/XCFramework/OpenSDK2.0.8.zip",
+  "version": "2.0.8"
+}

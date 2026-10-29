@@ -1,0 +1,2 @@
+# Keep Tencent's vendored headers byte-for-byte, including original whitespace.
+packages/fluwx/ios/fluwx/Frameworks/WechatSDK/WechatOpenSDK.xcframework/**/Headers/WechatOpenSDK/*.h -whitespace

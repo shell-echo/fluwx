@@ -69,6 +69,8 @@ dependencies:
 > For no_pay version, you will need switch to `fluwx_no_pay` package, which is a separate package without payment features.
 ## Configurations
 
+For this branch's iOS SwiftPM static SDK packaging, dSYM fix, pinned Git integration, and SDK update procedure, see [iOS static SDK distribution](./doc/iOS_STATIC_SDK.md).
+
 `Fluwx` enables multiple configurations in the section `fluwx` of `pubspec.yaml` from v4, you can reference [pubspec.yaml](./example/pubspec.yaml#L10)
 for more details.
 

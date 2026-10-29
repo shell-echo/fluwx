@@ -1,3 +1,7 @@
+# Unreleased
+* iOS SwiftPM: distribute the unmodified WeChat 2.0.8 archive as a static-library XCFramework, avoiding embedded empty framework stubs and their missing dSYM warnings.
+* Preserve the original vendor privacy manifest in a separate SwiftPM resource bundle; add reproducible SDK import checks and packaging regression tests.
+
 # 6.0.6
 * iOS framework=>2.0.8
 * HarmonyOS SDK=>1.0.19

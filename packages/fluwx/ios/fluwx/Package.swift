@@ -10,17 +10,16 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        .package(
-            url: "https://github.com/JarvanMo/WechatOpenSDK-SPM", //
-            from: "2.0.8"
-        )
     ],
     targets: [
+        .binaryTarget(name: "WechatOpenSDK", path: "Frameworks/WechatSDK/WechatOpenSDK.xcframework"),
+        .target(name: "WechatOpenSDKPrivacy", path: "Frameworks/WechatSDK/Privacy", resources: [.copy("PrivacyInfo.xcprivacy")]),
         .target(
             name: "fluwx",
             dependencies: [
                 .product(name: "FlutterFramework", package: "FlutterFramework"),
-                .product(name: "WechatOpenSDK", package: "WechatOpenSDK-SPM")
+                "WechatOpenSDK",
+                "WechatOpenSDKPrivacy"
             ],
             resources: [
                 .process("Resources/PrivacyInfo.xcprivacy")
